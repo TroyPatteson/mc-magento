@@ -2,3 +2,4 @@
 app/code/community/Ebizmarts/MailChimp/controllers/TestController.php
 /vendor/
 /node_modules/
+/.project
