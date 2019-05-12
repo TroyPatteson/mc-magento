@@ -182,18 +182,17 @@ class Ebizmarts_MailChimp_Model_Email_Template extends Ebizmarts_MailChimp_Model
      */
     public function getMail()
     {
-        $storeId = Mage::app()->getStore()->getId();
-        if (!Mage::getStoreConfig(Ebizmarts_MailChimp_Model_Config::MANDRILL_ACTIVE, $storeId)) {
+        $email_config = $this->getDesignConfig();
+        $storeId = (integer) $email_config->getStore();
+        if (!$this->isMandrillEnabled($storeId)) {
             return parent::getMail();
         }
 
-        if ($this->_mail) {
+        if ($this->_mail && (!$this->isMandrillEnabled($storeId))) {
             return $this->_mail;
         } else {
-            $storeId = Mage::app()->getStore()->getId();
             Mage::helper('mailchimp/mandrill')->log("store: $storeId API: " . Mage::getStoreConfig(Ebizmarts_MailChimp_Model_Config::MANDRILL_APIKEY, $storeId), $storeId);
-            $this->_mail = new Mandrill_Message(Mage::getStoreConfig(Ebizmarts_MailChimp_Model_Config::MANDRILL_APIKEY, $storeId));
-            return $this->_mail;
+            return $this->createMandrillMessage($storeId);
         }
     }
 
@@ -230,7 +229,13 @@ class Ebizmarts_MailChimp_Model_Email_Template extends Ebizmarts_MailChimp_Model
      */
     protected function getSendersDomains($mail)
     {
-        return $mail->senders->domains();
+        $mandrillSenders = array();
+        try {
+            $mandrillSenders = $mail->senders->domains();
+        } catch (Exception $e) {
+            Mage::log($e->getMessage(), null, 'Mandrill.log', true);
+        }
+        return $mandrillSenders;
     }
 
     /**
@@ -240,7 +245,13 @@ class Ebizmarts_MailChimp_Model_Email_Template extends Ebizmarts_MailChimp_Model
      */
     protected function sendMail($email, $mail)
     {
-        return $mail->messages->send($email);
+        $mailSent = false;
+        try {
+            $mailSent = $mail->messages->send($email);
+        } catch (Exception $e) {
+            Mage::log($e->getMessage(), null, 'Mandrill.log', true);
+        }
+        return $mailSent;
     }
 
     /**
@@ -257,5 +268,24 @@ class Ebizmarts_MailChimp_Model_Email_Template extends Ebizmarts_MailChimp_Model
     protected function getGeneralEmail()
     {
         return Mage::getStoreConfig('trans_email/ident_general/email');
+    }
+
+    /**
+     * @param $storeId
+     * @return mixed
+     */
+    protected function isMandrillEnabled($storeId)
+    {
+        return Mage::getStoreConfig(Ebizmarts_MailChimp_Model_Config::MANDRILL_ACTIVE, $storeId);
+    }
+
+    /**
+     * @param $storeId
+     * @return Mandrill_Message
+     * @throws Mandrill_Error
+     */
+    protected function createMandrillMessage($storeId)
+    {
+        return $this->_mail = new Mandrill_Message(Mage::getStoreConfig(Ebizmarts_MailChimp_Model_Config::MANDRILL_APIKEY, $storeId));
     }
 }
