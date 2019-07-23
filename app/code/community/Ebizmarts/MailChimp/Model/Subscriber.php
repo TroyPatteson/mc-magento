@@ -8,7 +8,8 @@
  */
 class Ebizmarts_MailChimp_Model_Subscriber extends Mage_Newsletter_Model_Subscriber
 {
-    const SUBSCRIBE_SOURCE = 'MailChimp';
+    const MAILCHIMP_SUBSCRIBE = 'MailChimp';
+    const SUBSCRIBE_CONFIRMATION = 'MailChimp_Confirmation';
 
     public function sendUnsubscriptionEmail()
     {
@@ -39,10 +40,10 @@ class Ebizmarts_MailChimp_Model_Subscriber extends Mage_Newsletter_Model_Subscri
 
     public function confirm($code)
     {
-        if($this->getCode()==$code) {
+        if ($this->getCode()==$code) {
             $this->setStatus(self::STATUS_SUBSCRIBED)
                 ->setIsStatusChanged(true)
-                ->setSubscriberSource(Ebizmarts_MailChimp_Model_Subscriber::SUBSCRIBE_SOURCE)
+                ->setSubscriberSource(Ebizmarts_MailChimp_Model_Subscriber::SUBSCRIBE_CONFIRMATION)
                 ->save();
             return true;
         }
